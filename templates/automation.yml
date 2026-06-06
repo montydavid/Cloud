@@ -1,10 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Scheduled Actions + Launch Template v2 + ASG actualizado
+Description: Scheduled Actions + Launch Template v2
 
 Resources:
 
   # ── Launch Template Version 2 ─────────────────────────────────────────
-  # Crea una nueva version del LT existente con una AMI/userdata actualizada
   LaunchTemplateV2:
     Type: AWS::EC2::LaunchTemplate
     Properties:
@@ -41,12 +40,12 @@ Resources:
               </style>
             </head>
             <body>
-              <div class="badge">🚀 version 2 · automation stack</div>
+              <div class="badge">version 2 · automation stack</div>
               <h1><span class="a">AUTO</span><span class="b">MATION</span></h1>
               <div class="info">
                 Instance: <span class="val">$INSTANCE_ID</span><br/>
                 AZ: <span class="val">$AZ</span><br/>
-                Launch Template: <span class="new">v2 — actualizada</span>
+                Launch Template: <span class="new">v2 actualizada</span>
               </div>
             </body>
             </html>
@@ -59,62 +58,42 @@ Resources:
               - Key: Name
                 Value: ASG-Instance-v2
 
-  # ── Actualizar ASG para usar LT v2 ────────────────────────────────────
-  ASGUpdateV2:
-    Type: AWS::AutoScaling::AutoScalingGroup
-    Properties:
-      AutoScalingGroupName: !ImportValue alb-asg-stack-ASGName
-      MinSize: '1'
-      MaxSize: '4'
-      DesiredCapacity: '2'
-      LaunchTemplate:
-        LaunchTemplateId: !Ref LaunchTemplateV2
-        Version: !GetAtt LaunchTemplateV2.LatestVersionNumber
-      VPCZoneIdentifier:
-        - !Select [0, !GetAZs '']
-      TargetGroupARNs:
-        - !ImportValue alb-asg-stack-TGArn
-
   # ── Scheduled Actions de INCREMENTO ──────────────────────────────────
   ScaleUpMorning:
     Type: AWS::AutoScaling::ScheduledAction
     Properties:
-      AutoScalingGroupName: !ImportValue alb-asg-stack-ASGName
+      AutoScalingGroupName: ASG-GitHubActions
       DesiredCapacity: 3
       MinSize: 2
       MaxSize: 4
-      # Todos los dias laborales a las 8:00 AM UTC
       Recurrence: "0 8 * * MON-FRI"
 
   ScaleUpAfternoon:
     Type: AWS::AutoScaling::ScheduledAction
     Properties:
-      AutoScalingGroupName: !ImportValue alb-asg-stack-ASGName
+      AutoScalingGroupName: ASG-GitHubActions
       DesiredCapacity: 4
       MinSize: 3
       MaxSize: 4
-      # Todos los dias laborales a las 13:00 (hora pico)
       Recurrence: "0 13 * * MON-FRI"
 
   # ── Scheduled Actions de REDUCCION ───────────────────────────────────
   ScaleDownEvening:
     Type: AWS::AutoScaling::ScheduledAction
     Properties:
-      AutoScalingGroupName: !ImportValue alb-asg-stack-ASGName
+      AutoScalingGroupName: ASG-GitHubActions
       DesiredCapacity: 2
       MinSize: 1
       MaxSize: 3
-      # Todos los dias a las 20:00 UTC
       Recurrence: "0 20 * * *"
 
   ScaleDownNight:
     Type: AWS::AutoScaling::ScheduledAction
     Properties:
-      AutoScalingGroupName: !ImportValue alb-asg-stack-ASGName
+      AutoScalingGroupName: ASG-GitHubActions
       DesiredCapacity: 1
       MinSize: 1
       MaxSize: 2
-      # Todos los dias a las 00:00 UTC (minimo nocturno)
       Recurrence: "0 0 * * *"
 
 Outputs:
@@ -124,21 +103,21 @@ Outputs:
     Value: !Ref LaunchTemplateV2
 
   LaunchTemplateV2Version:
-    Description: Numero de version del Launch Template v2
+    Description: Version del Launch Template v2
     Value: !GetAtt LaunchTemplateV2.LatestVersionNumber
 
-  ScaleUpMorningAction:
-    Description: Scheduled Action incremento manana (08:00 UTC L-V)
+  ScaleUpMorning:
+    Description: Scale up manana L-V 08:00 UTC
     Value: !Ref ScaleUpMorning
 
-  ScaleUpAfternoonAction:
-    Description: Scheduled Action incremento tarde (13:00 UTC L-V)
+  ScaleUpAfternoon:
+    Description: Scale up tarde L-V 13:00 UTC
     Value: !Ref ScaleUpAfternoon
 
-  ScaleDownEveningAction:
-    Description: Scheduled Action reduccion tarde-noche (20:00 UTC)
+  ScaleDownEvening:
+    Description: Scale down noche 20:00 UTC
     Value: !Ref ScaleDownEvening
 
-  ScaleDownNightAction:
-    Description: Scheduled Action reduccion nocturna (00:00 UTC)
+  ScaleDownNight:
+    Description: Scale down madrugada 00:00 UTC
     Value: !Ref ScaleDownNight
