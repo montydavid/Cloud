@@ -56,6 +56,15 @@ jobs:
               VpcId=${{ secrets.VPC_ID }} \
               SubnetIds=${{ secrets.SUBNET_IDS }}
 
+      - name: Ver error alb-asg si fallo
+        if: failure()
+        run: |
+          aws cloudformation describe-stack-events \
+            --stack-name alb-asg-stack \
+            --region us-east-1 \
+            --query "StackEvents[?ResourceStatus=='CREATE_FAILED'].[LogicalResourceId,ResourceStatusReason]" \
+            --output table
+
       # 4️⃣ Automatizacion: LT v2 + Scheduled Actions
       - name: Deploy automation-stack
         run: |
