@@ -74,12 +74,12 @@ jobs:
             --capabilities CAPABILITY_IAM
       - name: Ver error automation si fallo
         if: failure()
-          run: |
-            aws cloudformation describe-stack-events \
-              --stack-name automation-stack \
-              --region us-east-1 \
-              --query "StackEvents[?ResourceStatus=='CREATE_FAILED'].[LogicalResourceId,ResourceStatusReason]" \
-              --output table
+        run: |
+          aws cloudformation describe-stack-events \
+            --stack-name automation-stack \
+            --region us-east-1 \
+            --query "StackEvents[?ResourceStatus=='CREATE_FAILED'].[LogicalResourceId,ResourceStatusReason]" \
+            --output table
 
       # ✅ Mostrar URLs al final
       - name: Mostrar outputs
