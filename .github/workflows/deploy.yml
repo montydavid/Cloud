@@ -26,7 +26,7 @@ jobs:
           aws cloudformation deploy \
             --template-file templates/security.yml \
             --stack-name security-stack \
-            --capabilities CAPABILITY_IAM
+            
 
       # 2️⃣ EC2 estatica con Elastic IP
       - name: Deploy ec2-stack
