@@ -38,13 +38,11 @@ Resources:
 Outputs:
 
   ALBSecurityGroupId:
-    Description: ID del Security Group del ALB
-    Value: !Ref ALBSecurityGroup
+    Value: !GetAtt ALBSecurityGroup.GroupId
     Export:
       Name: security-stack-ALBSGId
 
   EC2SecurityGroupId:
-    Description: ID del Security Group de la EC2
-    Value: !Ref EC2SecurityGroup
+    Value: !GetAtt EC2SecurityGroup.GroupId
     Export:
       Name: security-stack-EC2SGId
