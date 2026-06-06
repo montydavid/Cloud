@@ -26,7 +26,14 @@ jobs:
           aws cloudformation deploy \
             --template-file templates/security.yml \
             --stack-name security-stack \
-            
+      - name: Ver error si fallo
+        if: failure()
+        run: |
+            aws cloudformation describe-stack-events \
+          --stack-name security-stack \
+          --region us-east-1 \
+          --query "StackEvents[?ResourceStatus=='CREATE_FAILED'].[LogicalResourceId,ResourceStatusReason]" \
+          --output table
 
       # 2️⃣ EC2 estatica con Elastic IP
       - name: Deploy ec2-stack
