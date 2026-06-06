@@ -1,0 +1,72 @@
+name: Deploy EC2
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # 1️⃣ Security — siempre primero, los demas stacks dependen de sus exports
+      - name: Deploy security-stack
+        run: |
+          aws cloudformation deploy \
+            --template-file templates/security.yml \
+            --stack-name security-stack \
+            --capabilities CAPABILITY_IAM
+
+      # 2️⃣ EC2 estatica con Elastic IP
+      - name: Deploy ec2-stack
+        run: |
+          aws cloudformation deploy \
+            --template-file templates/ec2.yml \
+            --stack-name ec2-stack \
+            --capabilities CAPABILITY_IAM
+
+      # 3️⃣ ALB + ASG + Warm Pool
+      # Reemplaza los valores de VpcId y SubnetIds por los de tu cuenta
+      - name: Deploy alb-asg-stack
+        run: |
+          aws cloudformation deploy \
+            --template-file templates/alb-asg.yml \
+            --stack-name alb-asg-stack \
+            --capabilities CAPABILITY_IAM \
+            --parameter-overrides \
+              VpcId=${{ secrets.VPC_ID }} \
+              SubnetIds=${{ secrets.SUBNET_IDS }}
+
+      # 4️⃣ Automatizacion: LT v2 + Scheduled Actions
+      - name: Deploy automation-stack
+        run: |
+          aws cloudformation deploy \
+            --template-file templates/automation.yml \
+            --stack-name automation-stack \
+            --capabilities CAPABILITY_IAM
+
+      # ✅ Mostrar URLs al final
+      - name: Mostrar outputs
+        run: |
+          echo "=== EC2 Estatica ==="
+          aws cloudformation describe-stacks \
+            --stack-name ec2-stack \
+            --query "Stacks[0].Outputs" \
+            --output table
+
+          echo "=== ALB ==="
+          aws cloudformation describe-stacks \
+            --stack-name alb-asg-stack \
+            --query "Stacks[0].Outputs" \
+            --output table
